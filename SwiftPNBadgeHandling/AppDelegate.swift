@@ -15,8 +15,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
 
-    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
+    func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool
+    {
         // Override point for customization after application launch.
+        
+        // Added by Sugam - Initialize Notifications Method Calling When App is Launched
+        self.initializeNotificationServices()
+        
+        // Added by Sugam - To clear Badges from App Icon
+        UIApplication.sharedApplication().applicationIconBadgeNumber = 0
+        
         return true
     }
 
@@ -30,13 +38,103 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
     }
 
-    func applicationWillEnterForeground(application: UIApplication) {
+    func applicationWillEnterForeground(application: UIApplication)
+    {
         // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
+        
+        // Added by Sugam - To clear Badges from App Icon
+        UIApplication.sharedApplication().applicationIconBadgeNumber = 0
+        
+
     }
 
     func applicationDidBecomeActive(application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        
+        // Added by Sugam - To clear Badges from App Icon
+        UIApplication.sharedApplication().applicationIconBadgeNumber = 0
+        
+
     }
+    
+    
+    // Added by Sugam - Method To Register For Notifications
+    
+    func initializeNotificationServices() -> Void
+    {
+        // For Notifications - User and Remote Notifications
+        
+        let settings = UIUserNotificationSettings(forTypes: [.Alert, .Badge, .Sound], categories: nil)
+        UIApplication.sharedApplication().registerUserNotificationSettings(settings)
+        UIApplication.sharedApplication().registerForRemoteNotifications()
+    }
+    
+    
+    
+    // Method To Convert Device Token from NSData to String
+    
+    private func convertDeviceTokenToString(deviceToken:NSData) -> String
+    {
+        //  Convert binary Device Token to a String (and remove the <,> and white space charaters).
+        
+        var deviceTokenStr = deviceToken.description.stringByReplacingOccurrencesOfString(">", withString: "")
+        
+        deviceTokenStr = deviceTokenStr.stringByReplacingOccurrencesOfString("<", withString: "")
+        
+        deviceTokenStr = deviceTokenStr.stringByReplacingOccurrencesOfString(" ", withString: "")
+        
+        // Our API returns token in all uppercase, regardless how it was originally sent.
+        // To make the two consistent, I am uppercasing the token string here.
+        deviceTokenStr = deviceTokenStr.uppercaseString
+        
+        return deviceTokenStr
+    }
+    
+    
+    func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: NSData)
+    {
+        print("My func 2.0 token is: ", deviceToken);
+        
+    }
+    
+    func didFailToRegisterForRemoteNotificationsWithError(error: NSError)
+    {
+        print("Failed to get token, error: ", error)
+    }
+    
+    func application(application: UIApplication,didRegisterForRemoteNotificationsWithDeviceToken deviceToken: NSData)
+    {
+        //send this device token to server
+        print("My token is: ", deviceToken);
+        
+        let deviceTokenStr = convertDeviceTokenToString(deviceToken)
+        
+        print(deviceTokenStr)
+        
+        // To Save Device Token for sending in Login Api
+        
+        NSUserDefaults.standardUserDefaults().setValue(deviceTokenStr, forKey: "DeviceToken")
+        NSUserDefaults.standardUserDefaults().synchronize()
+    }
+    
+    //Called if unable to register for APNS.
+    func application(application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: NSError)
+    {
+        
+        print(error)
+        
+    }
+    
+    // Added by sugam - To handle push notifications
+    
+    func application(application: UIApplication, didReceiveRemoteNotification userInfo: [NSObject : AnyObject])
+    {
+        // display the userInfo
+        
+        print(userInfo)
+        
+    }
+
 
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
